@@ -5,7 +5,7 @@ namespace ExampleApp
 {
     class Program
     {
-        static HttpServer hServer;
+        private static HttpServer hServer;
 
         static void Main(string[] args)
         {
@@ -18,8 +18,8 @@ namespace ExampleApp
                     RateLimitSecLimit = 0,
                     RateLimitPacketAmount = 2,
                     RateLimitWaitTime = 60,
-                    FirewallPacketBan = 10,
-                    FirewallPacketInterval = 60
+                    FirewallPacketBan = 0,
+                    FirewallPacketInterval = 0
                 }
             };
             hServer.OnDataReceiveEvent += new HttpServer.OnDataReceive(HServer_OnDataReceiveEvent);

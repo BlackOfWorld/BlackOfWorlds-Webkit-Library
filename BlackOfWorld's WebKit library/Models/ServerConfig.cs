@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 namespace BlackOfWorld.Webkit.Models
 {
@@ -53,5 +54,9 @@ namespace BlackOfWorld.Webkit.Models
         /// Put hated people here to prevent them to connecting
         /// </summary>
         public string[] BlacklistedIPs           = new string[0];
+        /// <summary>
+        /// Put your certificate here if you want to use https
+        /// </summary>
+        public X509Certificate2 SSLCertificate = null;
     }
 }

@@ -9,10 +9,10 @@ namespace BlackOfWorld.Webkit.Toolkit
 {
     internal static class Tools
     {
-        internal static bool enablePrint;
+        internal static bool EnablePrint;
         internal static void ConsolePrint(string text)
         {
-            if (enablePrint)
+            if (EnablePrint)
                 Console.Write("[Webkit server] " + text);
         }
 
@@ -47,7 +47,7 @@ namespace BlackOfWorld.Webkit.Toolkit
         }
         internal static dynamic FireEvent(Delegate mevent, Object obj, EventArgs args)
         {
-            return mevent != null ? mevent.DynamicInvoke(obj, args) : (dynamic)null;
+            return mevent?.DynamicInvoke(obj, args);
         }
     }
 }

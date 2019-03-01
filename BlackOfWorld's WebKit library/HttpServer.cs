@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -48,7 +49,7 @@ namespace BlackOfWorld.Webkit
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
                 var ex = (Exception)args.ExceptionObject;
-                Tools.enablePrint = true;
+                Tools.EnablePrint = true;
                 Tools.ConsolePrint("Internal unhandled exception happened! Please submit logs and source code to issue tracker so I can fix it.\nMessage: " + ex.Message + "\nStack trace:\n" + ex.StackTrace + "\n\nThis program will terminate.\n");
                 if (Debugger.IsAttached)
                     Debugger.Break();
@@ -66,17 +67,42 @@ namespace BlackOfWorld.Webkit
         {
             if (httpServerConfig == null)
                 return WebkitErrors.ConfigEmpty;
-            Tools.enablePrint = httpServerConfig.EnableConsolePrint;
+            Tools.EnablePrint = httpServerConfig.EnableConsolePrint;
             rl = new RateLimit(httpServerConfig.RateLimitPacketAmount, httpServerConfig.RateLimitWaitTime, httpServerConfig.RateLimitSecLimit);
             fr = new Firewall(httpServerConfig.FirewallPacketBan, httpServerConfig.FirewallPacketInterval, OnFirewallBanEvent);
             sFM.Start(httpServerConfig);
             rateLimited = Encoding.UTF8.GetBytes("You are being rate limited! Please wait " + httpServerConfig.RateLimitWaitTime + " seconds. (pro tip: every time you try to refresh the page, the timer will be set to max)");
+            string[] blackPrefixes = new[] { "http://*.com", "http://*:", "https://*.com", "https://*:", "http://+.com", "http://+:", "https://+.com", "https://+:" }; // no racism lol, also the only way to prevent any false detection
             try
             {
                 foreach (var prefix in httpServerConfig.Prefixes)
                 {
+                    if (blackPrefixes.Any((x) => prefix.StartsWith(x)))
+                    {
+                        Tools.ConsolePrint($"Due to RFC 7230, we can't let you use \"{prefix}\" as it's classified as unsafe.\n");
+                        continue;
+                    }
+                    if (prefix.StartsWith("https://") && httpServerConfig.SSLCertificate == null)
+                    {
+                        Tools.ConsolePrint($"As you don't have SSLCertificate setup, we can't let you use https. Skipping \"{prefix}\"\n");
+                        continue;
+                    }
+                    if (!prefix.EndsWith("/"))
+                    {
+                        Tools.ConsolePrint($"Prefixes must end with '/'. Skipping \"{prefix}\"\n");
+                        continue;
+                    }
                     httpServer.Prefixes.Add(prefix);
                     Tools.ConsolePrint($"Adding \"{prefix}\" to prefix list\n");
+                }
+
+                if (httpServer.Prefixes.Count <= 0)
+                {
+                    bool hmm = Tools.EnablePrint;
+                    Tools.EnablePrint = true;
+                    Tools.ConsolePrint("Oops! Looks like no you don't have any valid prefixes! Server will not start.\n");
+                    Tools.EnablePrint = hmm;
+                    return WebkitErrors.NotRunning;
                 }
                 Tools.ConsolePrint("Starting the server!\n");
                 if (httpServerConfig.EnforceProtectionPolicy)
@@ -99,7 +125,6 @@ namespace BlackOfWorld.Webkit
             while (httpServer.IsListening)
             {
                 if (_lock) return;
-
                 var context = httpServer.BeginGetContext(ServerWork, null);
                 context.AsyncWaitHandle.WaitOne();
                 context.AsyncWaitHandle.Dispose();
