@@ -58,5 +58,9 @@ namespace BlackOfWorld.Webkit.Models
         /// Put your certificate here if you want to use https
         /// </summary>
         public X509Certificate2 SSLCertificate = null;
+        /// <summary>
+        /// Custom "server" header, but please use ours, just because it's a feature doesn't mean it's cool to do this 🥺
+        /// </summary>
+        public string ServerHeader = "BlackOfWorld's WBK server";
     }
 }

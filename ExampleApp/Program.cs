@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using BlackOfWorld.Webkit;
 using BlackOfWorld.Webkit.Models;
 namespace ExampleApp
@@ -15,11 +16,7 @@ namespace ExampleApp
                 httpServerConfig = new ServerConfig()
                 {
                     Prefixes = new[] { "http://127.0.0.1:4819/" },
-                    RateLimitSecLimit = 0,
-                    RateLimitPacketAmount = 2,
-                    RateLimitWaitTime = 60,
-                    FirewallPacketBan = 0,
-                    FirewallPacketInterval = 0
+                    StaticFileLocation = Directory.GetCurrentDirectory() + "\\static\\"
                 }
             };
             hServer.OnDataReceiveEvent += new HttpServer.OnDataReceive(HServer_OnDataReceiveEvent);
@@ -42,10 +39,10 @@ namespace ExampleApp
             return true;
         }
 
-        private static string HServer_OnDataReceiveEvent(object sender, DataReceiveArgs args)
+        private static ResponseMethod HServer_OnDataReceiveEvent(object sender, DataReceiveArgs args)
         {
             Console.WriteLine($"{args.Method}: {args.RemoteIP} -> {args.URL}");
-            return "ok boss";
+            return new ResponseMethod("ok boss");
         }
     }
 }

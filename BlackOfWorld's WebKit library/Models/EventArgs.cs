@@ -21,5 +21,6 @@ namespace BlackOfWorld.Webkit.Models
         public bool Local;
         public string HostName;
         public string Method;
+        public string[] Headers;
     }
 }

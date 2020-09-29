@@ -27,6 +27,7 @@ namespace BlackOfWorld.Webkit.Managers
             if (!started) return new byte[0];
             var nonCached = FindNonCached(fileName);
             if (nonCached.Length != 0) return nonCached;
+            if (fileName[0] == '/') fileName = fileName.Substring(1);
             if (!staticItems.TryGetValue(fileName, out byte[] result) && !staticItems.TryGetValue(fileName.Replace('/', '\\'), out result))
                 return new byte[0];   
             Tools.ConsolePrint("Static file found\n");
@@ -40,8 +41,6 @@ namespace BlackOfWorld.Webkit.Managers
             this.cfg = cfg;
             var filesFolders = Directory.GetFiles(cfg.StaticFileLocation, "*", SearchOption.AllDirectories);
             started = true;
-            if (cfg.StaticFileLocation == "")
-                return;
             if (!cfg.CacheStaticFiles)
             {
                 staticFiles = filesFolders;
