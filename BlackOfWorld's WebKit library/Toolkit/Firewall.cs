@@ -47,7 +47,7 @@ namespace BlackOfWorld.Webkit.Toolkit
             if (max == 0) return true;
             if (firewallBannedIPs.Contains(ip))  return false;
             mCache.TryGetValue(ip, out int packets);
-            packets = packets + 1;
+            packets += 1;
             if (packets >= max && Tools.FireEvent(banEvent, this, new FirewallBanArgs() { Ip = ip, banDate = DateTime.Now }))
             {
                 Tools.ConsolePrint($"\"{ip.ToString()}\" has been firewall banned for sending too many packets!");

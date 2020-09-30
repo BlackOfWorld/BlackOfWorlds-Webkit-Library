@@ -10,6 +10,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Collections;
+using System.Net.NetworkInformation;
 
 namespace BlackOfWorld.Webkit
 {
@@ -49,18 +50,43 @@ namespace BlackOfWorld.Webkit
             mainFolderPath = Path.Combine(System.AppContext.BaseDirectory, "WebkitLibrary");
             if (!Directory.Exists(mainFolderPath))
                 Directory.CreateDirectory(mainFolderPath);
-            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
-            {
-                var ex = (Exception)args.ExceptionObject;
-                Tools.EnablePrint = true;
-                Tools.ConsolePrint("Internal unhandled exception happened! Please submit logs and source code to issue tracker so I can fix it.\nMessage: " + ex.Message + "\nStack trace:\n" + ex.StackTrace + "\n\nThis program will terminate.\n");
-                if (Debugger.IsAttached)
-                    Debugger.Break();
-                Environment.Exit(1);
-            };
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
             OnFirewallBanEvent += (sender, args) => true;
             OnDataStaticSentEvent += (sender, args) => true;
             OnDataReceiveEvent += (sender, args) => new ResponseMethod("<h1>This is an example page</h1>");
+        }
+
+        private void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
+        {
+            var ex = (Exception)args.ExceptionObject;
+            if (!ex.StackTrace.Split('\n')[0].Substring(6).StartsWith("BlackOfWorld.Webkit")) return;
+            Tools.EnablePrint = true;
+            Tools.ConsolePrint("Internal unhandled exception happened! Please submit logs and source code to issue tracker so I can fix it.\nMessage: " + ex.Message + "\nStack trace:\n" + ex.StackTrace + "\n\nThis program will terminate.\n");
+            if (Debugger.IsAttached) { Debugger.Break(); return; }
+            Environment.Exit(1);
+        }
+        private bool isPortAvalaible(int myPort)
+        {
+            var unavailablePorts = new List<int>();
+            var properties = IPGlobalProperties.GetIPGlobalProperties();
+
+            // Active connections
+            var connections = properties.GetActiveTcpConnections();
+            unavailablePorts.AddRange(connections.Select(con => con.LocalEndPoint.Port));
+
+            // Active tcp listners
+            var endPointsTcp = properties.GetActiveTcpListeners();
+            unavailablePorts.AddRange(endPointsTcp.Select(con => con.Port));
+
+            // Active udp listeners
+            var endPointsUdp = properties.GetActiveUdpListeners();
+            unavailablePorts.AddRange(endPointsUdp.Select(con => con.Port));
+
+            foreach (int p in unavailablePorts)
+            {
+                if (p == myPort) return false;
+            }
+            return true;
         }
         /// <summary>
         /// Starts the server
@@ -90,6 +116,12 @@ namespace BlackOfWorld.Webkit
                     if (prefix.StartsWith("https://") && httpServerConfig.SSLCertificate == null)
                     {
                         Tools.ConsolePrint($"As you don't have SSLCertificate setup, we can't let you use https. Skipping \"{prefix}\"\n");
+                        continue;
+                    }
+                    var port = new Uri(prefix, UriKind.Absolute).Port;
+                    if (!isPortAvalaible(port))
+                    {
+                        Tools.ConsolePrint($"Oops! Port {port} is unavailable for prefix \"{prefix}\"!\n");
                         continue;
                     }
                     if (!prefix.EndsWith("/"))
@@ -134,7 +166,7 @@ namespace BlackOfWorld.Webkit
             respStatus.Add(200, "OK");
             respStatus.Add(201, "Created");
             respStatus.Add(202, "Accepted");
-            respStatus.Add(202, "Non-Authoritative Information");
+            respStatus.Add(203, "Non-Authoritative Information");
             respStatus.Add(204, "No Content");
             respStatus.Add(205, "Reset Content");
             respStatus.Add(206, "Partial Content");
@@ -298,6 +330,7 @@ namespace BlackOfWorld.Webkit
             else
                 httpServer.Stop();
             CurrentStatus = CurrentServerStatus.NotListening;
+            AppDomain.CurrentDomain.UnhandledException -= OnUnhandledException;
             Tools.ConsolePrint("Server stopped!\n");
             return WebkitErrors.Ok;
         }

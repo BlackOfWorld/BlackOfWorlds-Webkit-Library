@@ -15,8 +15,9 @@ namespace ExampleApp
             {
                 httpServerConfig = new ServerConfig()
                 {
-                    Prefixes = new[] { "http://127.0.0.1:4819/" },
-                    StaticFileLocation = Directory.GetCurrentDirectory() + "\\static\\"
+                    Prefixes = new[] { "http://127.0.0.1:6463/" },
+                    StaticFileLocation = Directory.GetCurrentDirectory() + "\\static\\",
+                    CacheStaticFiles = false
                 }
             };
             hServer.OnDataReceiveEvent += new HttpServer.OnDataReceive(HServer_OnDataReceiveEvent);
